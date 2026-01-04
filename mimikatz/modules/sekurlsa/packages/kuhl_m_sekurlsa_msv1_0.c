@@ -146,6 +146,8 @@ const MSV1_0_PRIMARY_HELPER * kuhl_m_sekurlsa_msv_helper(PKUHL_M_SEKURLSA_CONTEX
 		helper = &msv1_0_primaryHelper[2];
 	else if (context->osContext.BuildNumber < KULL_M_WIN_BUILD_11_24H2)
 		helper = &msv1_0_primaryHelper[3];
+	else if (context->osContext.BuildNumber < KULL_M_WIN_BUILD_11_25H2)
+		helper = &msv1_0_primaryHelper[4];
 	else
 		helper = &msv1_0_primaryHelper[4];
 	return helper;

