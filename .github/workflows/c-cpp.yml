@@ -40,12 +40,12 @@ jobs:
           Remove-Item -Recurse -Force "$env:ProgramFiles\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets"  # 删除缓存
 
       # 6. 设置 Visual Studio 环境并编译 Mimikatz 项目
-      - name: Build Mimikatz with MSVC
+      - name: Build Mimikatz with MSBuild
         run: |
-          # 使用 vsdevcmd.bat 设置 Visual Studio 环境变量
-          call "C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vsdevcmd.bat"
-          # 编译 mimikatz
-          nmake /f Makefile
+          # 使用 PowerShell 的 & 运算符来调用 vsdevcmd.bat 设置环境变量
+          & "C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vsdevcmd.bat"
+          # 使用 MSBuild 构建 Mimikatz.sln
+          msbuild mimikatz.sln /p:Configuration=Release /p:Platform=x64 /m
 
       # 7. 上传构建产物
       - name: Upload build artifact
