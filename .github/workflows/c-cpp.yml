@@ -15,6 +15,10 @@ jobs:
 
     timeout-minutes: 120  # 设置构建超时时间为 120 分钟
 
+    strategy:
+      matrix:
+        platform: [x64, Win32]  # 目标平台为 x64 和 Win32
+
     steps:
       # 1. 检出代码
       - name: Checkout repository
@@ -34,25 +38,34 @@ jobs:
       - name: Update submodules
         run: git submodule update --init --recursive
 
-      # 5. 清理任何先前的构建缓存（如果有的话）
-      - name: Clean build
+      # 5. 在构建之前修改 SDK 文件（与 AppVeyor 中的 `before_build` 类似）
+      - name: Modify SDK file
         run: |
-          Remove-Item -Recurse -Force "$env:ProgramFiles\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets"  # 删除缓存
+          powershell -Command "(Get-Content 'C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v7.1A\\Include\\ntsecapi.h') | %{$_ -replace '^RtlDecryptMemory\(', '__stdcall RtlDecryptMemory('} | Set-Content 'C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v7.1A\\Include\\ntsecapi.h'"
 
       # 6. 设置 Visual Studio 环境并编译 Mimikatz 项目
       - name: Build Mimikatz with MSBuild
         run: |
           # 使用 PowerShell 的 & 运算符来调用 vsdevcmd.bat 设置环境变量
           & "C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vsdevcmd.bat"
-          # 使用 MSBuild 构建 Mimikatz.sln
-          msbuild mimikatz.sln /p:Configuration=Release /p:Platform=x64 /m
+          # 使用 MSBuild 构建 mimikatz.sln
+          msbuild mimikatz.sln /p:Configuration=Release /p:Platform=${{ matrix.platform }} /m
 
-      # 7. 上传构建产物
-      - name: Upload build artifact
+      # 7. 压缩构建产物（与 AppVeyor 中的 `after_build` 类似）
+      - name: Archive build artifacts
+        run: |
+          7z a -t7z -mx -ms=on "mimikatz_trunk_${{ matrix.platform }}.7z" -xr@notrunk.lst .\${{ matrix.platform }} README.md kiwi_passwords.yar mimicom.idl
+          7z a -tzip -mx -mm=deflate -mpass=15 "mimikatz_trunk_${{ matrix.platform }}.zip" -xr@notrunk.lst .\${{ matrix.platform }} README.md kiwi_passwords.yar mimicom.idl
+          7z a -p${{ github.repository }} -mhe=on -t7z -mx -ms=on "mimikatz_trunk_password_${{ matrix.platform }}.7z" -xr@notrunk.lst .\${{ matrix.platform }} README.md kiwi_passwords.yar mimicom.idl
+          7z a -p${{ github.repository }} -tzip -mx -mm=deflate -mpass=15 "mimikatz_trunk_password_${{ matrix.platform }}.zip" -xr@notrunk.lst .\${{ matrix.platform }} README.md kiwi_passwords.yar mimicom.idl
+
+      # 8. 上传构建产物
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mimikatz-build-x64
+          name: mimikatz-build-${{ matrix.platform }}
           path: |
-            **\*.exe
-            **\*.dll
-            **\*.pdb
+            mimikatz_trunk_${{ matrix.platform }}.7z
+            mimikatz_trunk_${{ matrix.platform }}.zip
+            mimikatz_trunk_password_${{ matrix.platform }}.7z
+            mimikatz_trunk_password_${{ matrix.platform }}.zip
