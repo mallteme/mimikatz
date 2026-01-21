@@ -1,22 +1,17 @@
-name: Build Mimikatz with MSBuild
+name: Build Mimikatz with MSVC
 
 on:
   push:
     branches:
-      - master  # 你可以修改为你实际使用的分支名称
+      - main  # 你可以修改为你实际使用的分支名称
   pull_request:
     branches:
-      - master  # 你可以修改为你实际使用的分支名称
+      - main  # 你可以修改为你实际使用的分支名称
   workflow_dispatch:  # 支持手动触发，方便调试
 
 jobs:
   build:
     runs-on: windows-latest  # 使用 GitHub 提供的最新 Windows 运行环境
-
-    strategy:
-      matrix:
-        platform: [x64, Win32]  # 支持构建 x64 和 Win32 平台
-        configuration: [Release]  # 默认使用 Release 配置
 
     timeout-minutes: 120  # 设置构建超时时间为 120 分钟
 
@@ -25,8 +20,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. 设置 MSBuild 环境
-      - name: Setup MSBuild
+      # 2. 设置 Visual Studio 编译环境
+      - name: Set up Visual Studio Build Tools
         uses: microsoft/setup-msbuild@v2
 
       # 3. 安装 Visual Studio Build Tools 和 Windows SDK
@@ -44,16 +39,18 @@ jobs:
         run: |
           Remove-Item -Recurse -Force "$env:ProgramFiles\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets"  # 删除缓存
 
-      # 6. 编译 Mimikatz 项目并输出详细日志
-      - name: Build Mimikatz with MSBuild
+      # 6. 编译 Mimikatz 项目
+      - name: Build Mimikatz with MSVC
         run: |
-          msbuild mimikatz.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m /v:diag
-
+          # 使用 Visual Studio 的 MSVC 编译器来编译 mimikatz
+          vcvarsall.bat x64  # 设置 Visual Studio 环境变量
+          nmake /f Makefile
+          
       # 7. 上传构建产物
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mimikatz-build-${{ matrix.platform }}
+          name: mimikatz-build-x64
           path: |
             **\*.exe
             **\*.dll
