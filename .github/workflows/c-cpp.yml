@@ -3,49 +3,46 @@ name: Build Mimikatz with MSBuild
 on:
   push:
     branches:
-      - main
+      - main  # 你可以修改为你实际使用的分支名称
   pull_request:
     branches:
-      - main
+      - main  # 你可以修改为你实际使用的分支名称
+  workflow_dispatch:  # 支持手动触发，方便调试
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-latest  # 使用 GitHub 提供的最新 Windows 运行环境
 
     strategy:
       matrix:
-        platform: [x64, Win32] 
-        configuration: [Release]  
+        platform: [x64, Win32]  # 支持构建 x64 和 Win32 平台
+        configuration: [Release]  # 默认使用 Release 配置
 
     steps:
-      # Checkout 代码
+      # 1. 检出代码
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 设置 MSBuild 环境
+      # 2. 设置 MSBuild 环境
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      # 安装必要的 Visual Studio Build Tools 和 Windows SDK
+      # 3. 安装 Visual Studio Build Tools 和 Windows SDK
       - name: Install Visual Studio Build Tools
         run: |
-          choco install visualstudio2022buildtools --version=17.0.5
-          choco install windows-sdk-10.0
+          choco install visualstudio2022buildtools --version=17.0.5 -y
+          choco install windows-sdk-10.0 -y
 
-      # 安装 CMake（如果你是用 CMake 构建项目的话）
-      - name: Install CMake
-        run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-
-      # 获取 mimikatz 子模块
+      # 4. 更新 Git 子模块（mimikatz 可能会用到子模块）
       - name: Update submodules
         run: git submodule update --init --recursive
 
-      # 构建 mimikatz 项目
+      # 5. 编译 Mimikatz 项目
       - name: Build Mimikatz with MSBuild
         run: |
           msbuild mimikatz.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m
 
-      # 上传构建产物
+      # 6. 上传构建产物
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
