@@ -18,6 +18,8 @@ jobs:
         platform: [x64, Win32]  # 支持构建 x64 和 Win32 平台
         configuration: [Release]  # 默认使用 Release 配置
 
+    timeout-minutes: 120  # 设置构建超时时间为 120 分钟
+
     steps:
       # 1. 检出代码
       - name: Checkout repository
@@ -37,12 +39,17 @@ jobs:
       - name: Update submodules
         run: git submodule update --init --recursive
 
-      # 5. 编译 Mimikatz 项目
+      # 5. 清理任何先前的构建缓存（如果有的话）
+      - name: Clean build
+        run: |
+          Remove-Item -Recurse -Force "$env:ProgramFiles\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets"  # 删除缓存
+
+      # 6. 编译 Mimikatz 项目并输出详细日志
       - name: Build Mimikatz with MSBuild
         run: |
-          msbuild mimikatz.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m
+          msbuild mimikatz.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m /v:diag
 
-      # 6. 上传构建产物
+      # 7. 上传构建产物
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
