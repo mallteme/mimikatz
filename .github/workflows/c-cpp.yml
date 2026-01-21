@@ -1,0 +1,35 @@
+name: windows-msbuild-test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        platform: [x64, Win32]
+        configuration: [Release]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build solution
+        run: |
+          msbuild your_solution.sln ^
+            /p:Configuration=${{ matrix.configuration }} ^
+            /p:Platform=${{ matrix.platform }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.platform }}
+          path: |
+            **\*.exe
+            **\*.dll
