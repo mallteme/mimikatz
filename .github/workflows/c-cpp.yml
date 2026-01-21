@@ -44,10 +44,10 @@ jobs:
           powershell -Command "(Get-Content 'C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v7.1A\\Include\\ntsecapi.h') | %{$_ -replace '^RtlDecryptMemory\(', '__stdcall RtlDecryptMemory('} | Set-Content 'C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v7.1A\\Include\\ntsecapi.h'"
 
       # 6. 设置 Visual Studio 环境并编译 Mimikatz 项目
-      - name: Build Mimikatz with MSBuild
+      - name: Set up Visual Studio environment and build
         run: |
-          # 使用 cmd /C 调用 vsdevcmd.bat 设置环境变量
-          cmd /C ""C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vsdevcmd.bat""
+          # 使用 Start-Process 调用 vsdevcmd.bat 设置环境变量
+          Start-Process "C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vsdevcmd.bat" -Wait
           # 使用 MSBuild 构建 mimikatz.sln
           msbuild mimikatz.sln /p:Configuration=Release /p:Platform=${{ matrix.platform }} /m
 
